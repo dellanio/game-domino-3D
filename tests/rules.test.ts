@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chooseMove } from '../src/game/ai';
 import { ChainLayout, TILE_L, TILE_W, type TilePose } from '../src/game/layout';
-import { DominoRound, createSet, isDouble, openingTile, type Tile, type PlayerId } from '../src/game/rules';
+import { DominoRound, createSet, handPips, isDouble, openingTile, type HandSize, type Tile, type PlayerId } from '../src/game/rules';
 
 const t = (a: number, b: number, id = a * 10 + b): Tile => ({ id, a, b });
 
@@ -90,24 +90,69 @@ describe('jogadas', () => {
   });
 });
 
-describe('IA', () => {
-  it('sempre escolhe uma jogada legal e partidas inteiras terminam', () => {
-    for (let seed = 1; seed <= 200; seed++) {
+describe('modos de rodada', () => {
+  it('mantém sete peças por mão por padrão', () => {
+    const r = new DominoRound();
+    expect(r.hands.map((hand) => hand.length)).toEqual([7, 7]);
+    expect(r.boneyard).toHaveLength(14);
+  });
+
+  it.each([null, 0, 1, 4, 6, 8, -3, 3.5, NaN, Infinity, '3', true])('rejeita handSize inválido: %s', (handSize) => {
+    expect(() => new DominoRound({ handSize: handSize as HandSize })).toThrow(RangeError);
+  });
+
+  it.each([3, 5, 7] as const)('distribui %i peças por mão na ordem do baralho fornecido', (handSize) => {
+    const deck = createSet();
+    const r = new DominoRound({ tiles: deck, handSize });
+    expect(r.hands).toEqual([deck.slice(0, handSize), deck.slice(handSize, handSize * 2)]);
+    expect(r.boneyard).toEqual(deck.slice(handSize * 2));
+    expect(deck).toEqual(createSet());
+  });
+
+  it.each([3, 5, 7] as const)('preserva abertura, peças e término em 300 jogos com mãos de %i', (handSize) => {
+    for (let seed = 1; seed <= 300; seed++) {
       const rng = seeded(seed);
-      const r = new DominoRound({ rng });
+      const r = new DominoRound({ rng, handSize });
+      expect(r.hands.map((hand) => hand.length)).toEqual([handSize, handSize]);
+      expect(r.boneyard).toHaveLength(28 - 2 * handSize);
+      const dealt = r.hands.flat();
+      const doubles = dealt.filter(isDouble);
+      const expectedOpening = doubles.length
+        ? doubles.reduce((best, tile) => tile.a > best.a ? tile : best)
+        : dealt.reduce((best, tile) => handPips([tile]) * 10 + tile.b > handPips([best]) * 10 + best.b ? tile : best);
+      expect(r.forcedOpening).toEqual(expectedOpening);
+      expect(r.legalMoves()).toEqual([{ tile: expectedOpening, side: 'right' }]);
+      expect(r.hands[r.turn]).toContainEqual(expectedOpening);
+      const conserve = () => {
+        const tiles = [...r.hands.flat(), ...r.boneyard, ...r.chain.map((placed) => placed.tile)];
+        expect(tiles.slice().sort((a, b) => a.id - b.id)).toEqual(createSet());
+      };
+      conserve();
       let guard = 0;
       while (!r.isOver && guard++ < 200) {
         const m = chooseMove(r, { rng });
-        if (m) r.play(m);
+        if (m) {
+          expect(r.legalMoves()).toContainEqual(m);
+          r.play(m);
+        }
         else if (r.canDraw()) r.draw();
         else r.pass();
+        conserve();
       }
       expect(r.isOver).toBe(true);
-      const total = r.chain.length + r.hands[0].length + r.hands[1].length + r.boneyard.length;
-      expect(total).toBe(28);
+      const result = r.result!;
+      if (result.kind === 'domino') expect(r.hands[result.winner]).toHaveLength(0);
+      else {
+        expect(r.boneyard).toHaveLength(0);
+        expect(result.totals).toEqual(r.hands.map(handPips));
+        expect(result.winner).toBe(result.totals[0] === result.totals[1] ? null : result.totals[0] < result.totals[1] ? 0 : 1);
+      }
+      expect(result.points).toBe(result.winner === null ? 0 : handPips(r.hands[(1 - result.winner) as PlayerId]));
     }
   });
+});
 
+describe('IA', () => {
   it('prefere cortar o adversário quando sabe que ele não tem o número', () => {
     const r = rigged([t(1, 2), t(0, 0)], [t(2, 6), t(2, 5), t(3, 3)], [], 1);
     r.hands = [[t(0, 0), t(1, 1)], [t(2, 6), t(2, 5), t(3, 3)]];

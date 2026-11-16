@@ -27,7 +27,8 @@ export type RoundEnd =
   | { kind: 'domino'; winner: PlayerId; points: number }
   | { kind: 'blocked'; winner: PlayerId | null; points: number; totals: [number, number] };
 
-export const HAND_SIZE = 7;
+export type HandSize = 3 | 5 | 7;
+export const HAND_SIZE: HandSize = 7;
 
 export const pipCount = (t: Tile): number => t.a + t.b;
 export const isDouble = (t: Tile): boolean => t.a === t.b;
@@ -81,10 +82,14 @@ export class DominoRound {
   /** Números que cada jogador mostrou não ter (comprou ou passou com eles na ponta). */
   lacks: [Set<number>, Set<number>] = [new Set(), new Set()];
 
-  constructor(opts: { rng?: Rng; starter?: PlayerId | null; tiles?: Tile[] } = {}) {
+  constructor(opts: { rng?: Rng; starter?: PlayerId | null; tiles?: Tile[]; handSize?: HandSize } = {}) {
+    const handSize = opts.handSize === undefined ? HAND_SIZE : opts.handSize;
+    if (handSize !== 3 && handSize !== 5 && handSize !== 7) {
+      throw new RangeError('handSize deve ser 3, 5 ou 7');
+    }
     const deck = opts.tiles ?? shuffle(createSet(), opts.rng);
-    this.hands = [deck.slice(0, HAND_SIZE), deck.slice(HAND_SIZE, HAND_SIZE * 2)];
-    this.boneyard = deck.slice(HAND_SIZE * 2);
+    this.hands = [deck.slice(0, handSize), deck.slice(handSize, handSize * 2)];
+    this.boneyard = deck.slice(handSize * 2);
     if (opts.starter === undefined || opts.starter === null) {
       const open = openingTile(this.hands);
       this.turn = open.player;
