@@ -1,4 +1,4 @@
-import { playTileSound } from './music';
+import { playGatheringSound, playTileSound, stopGatheringSound } from './music';
 // Controlador do jogo: liga regras, IA, cena 3D e interface.
 
 import * as THREE from 'three';
@@ -304,6 +304,7 @@ async function newRound() {
   updateHud();
 
   // Todas as peças voltam para o monte, viradas; depois são distribuídas.
+  playGatheringSound();
   const all = [...round.hands[0], ...round.hands[1], ...round.boneyard];
   await Promise.all(
     all.map((tile, i) => {
@@ -477,6 +478,7 @@ requestAnimationFrame(frame);
 };
 
 function showMenu() {
+  stopGatheringSound();
   ++session;
   inMenu = true;
   busy = false;

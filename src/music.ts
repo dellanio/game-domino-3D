@@ -2,6 +2,9 @@
 const toggle = document.getElementById('music-toggle') as HTMLButtonElement;
 const status = document.getElementById('music-status')!;
 const audio = new Audio(`${import.meta.env.BASE_URL}audio/backbay-lounge.mp3`);
+const gatheringSound = new Audio(`${import.meta.env.BASE_URL}audio/som-inicial-2.mp3`);
+gatheringSound.preload = 'auto';
+gatheringSound.volume = 0.3;
 audio.loop = true;
 audio.preload = 'none';
 let enabled = true;
@@ -55,6 +58,18 @@ export function playTileSound() {
   source.onended = () => { source.disconnect(); impact.disconnect(); };
   source.start(now, 0, Math.min(1, tileSound.duration));
 }
+
+export function stopGatheringSound() {
+  gatheringSound.pause();
+  gatheringSound.currentTime = 0;
+}
+
+export function playGatheringSound() {
+  stopGatheringSound();
+  if (!enabled || document.hidden) return;
+  // Chamado no início do movimento, sem aguardar distribuição ou animação de pouso.
+  void gatheringSound.play().catch(() => {});
+}
 function save(key: string, value: string) {
   try { localStorage.setItem(key, value); } catch { /* Preferência vale nesta sessão. */ }
 }
@@ -82,6 +97,7 @@ toggle.addEventListener('click', () => {
   if (enabled) { unlockEffects(); void start(); }
   else {
     audio.pause();
+    stopGatheringSound();
     if (effectContext?.state === 'running') void effectContext.suspend().catch(() => {});
   }
 });
@@ -94,7 +110,10 @@ function activate(event: Event) {
 document.addEventListener('pointerdown', activate);
 document.addEventListener('keydown', activate);
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) audio.pause(); else void start();
+  if (document.hidden) {
+    audio.pause();
+    stopGatheringSound();
+  } else void start();
 });
 audio.addEventListener('error', () => { status.textContent = 'Música indisponível. Tente recarregar o jogo.'; });
 update();
