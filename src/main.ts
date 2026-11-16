@@ -21,6 +21,12 @@ const AI_THINK_MS = 750;
 // ---------- DOM ----------
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const ui = {
+  menu: $('menu'),
+  menuForm: $<HTMLFormElement>('menu-form'),
+  game: $('game-ui'),
+  menuBtn: $<HTMLButtonElement>('btn-menu'),
+  modalMenu: $<HTMLButtonElement>('modal-menu'),
+  mode: $('current-mode'),
   scoreYou: $('score-you'),
   scoreAi: $('score-ai'),
   target: $('target'),
@@ -38,7 +44,7 @@ ui.target.textContent = String(MATCH_TARGET);
 
 // ---------- Cena ----------
 const stage = createStage($('stage'));
-const tweener = new Tweener();
+let tweener = new Tweener();
 const layout = new ChainLayout();
 const views = new Map<number, TileView>();
 const raycaster = new THREE.Raycaster();
@@ -56,6 +62,12 @@ const ghostGeo = new THREE.BoxGeometry(2.04, 0.06, 1.04);
 const ghosts: { mesh: THREE.Mesh; move: Move }[] = [];
 
 // ---------- Estado da partida ----------
+type HandSize = 3 | 5 | 7;
+const modeNames = { 7: 'Clássico', 3: 'Rápido', 5: 'Compacto' } as const;
+let handSize: HandSize = 7;
+let session = 0;
+let inMenu = true;
+const isCurrent = (token: number) => token === session && !inMenu;
 let round!: DominoRound;
 let scores: [number, number] = [0, 0];
 let roundNo = 0;
@@ -132,13 +144,15 @@ function placedFor(move: Move): PlacedTile {
   return { tile: move.tile, side: move.side, inner: end, outer: otherValue(move.tile, end) };
 }
 
-async function animateToTable(view: TileView, pose: TilePose) {
+async function animateToTable(view: TileView, pose: TilePose, token: number) {
   // Sobe, vira de face para cima e pousa na corrente.
   await tweener.to(view.root, target(pose.x, REST_Y, pose.z, pose.yaw), { duration: 620, arc: 2.2 });
-  playTileSound();
+  if (isCurrent(token)) playTileSound();
 }
 
 async function doMove(move: Move) {
+  const token = session;
+  if (!isCurrent(token)) return;
   busy = true;
   clearGhosts();
   selected = null;
@@ -148,21 +162,27 @@ async function doMove(move: Move) {
   const placed = round.play(move);
   const pose = layout.place(placed);
   view.bodyMaterial.emissiveIntensity = 0;
-  await Promise.all([animateToTable(view, pose), arrangeHands(420)]);
+  await Promise.all([animateToTable(view, pose, token), arrangeHands(420)]);
+  if (!isCurrent(token)) return;
   busy = false;
   void step();
 }
 
 async function doDraw() {
+  const token = session;
+  if (!isCurrent(token)) return;
   busy = true;
   updateHud();
   round.draw();
   await arrangeHands(480);
+  if (!isCurrent(token)) return;
   busy = false;
 }
 
 // ---------- Turnos ----------
 async function step() {
+  const token = session;
+  if (!isCurrent(token)) return;
   updateHud();
   if (round.isOver) return showRoundEnd();
 
@@ -171,6 +191,7 @@ async function step() {
     setStatus('A IA está pensando…');
     updateHud();
     await sleep(AI_THINK_MS);
+    if (!isCurrent(token)) return;
     while (!round.isOver && round.turn === 1) {
       const m = chooseMove(round);
       if (m) {
@@ -180,12 +201,15 @@ async function step() {
       if (round.canDraw()) {
         setStatus('A IA está comprando…');
         await doDraw();
+        if (!isCurrent(token)) return;
         busy = true;
         await sleep(320);
+        if (!isCurrent(token)) return;
       } else {
         round.pass();
         setStatus('A IA passou a vez.');
         await sleep(900);
+        if (!isCurrent(token)) return;
       }
     }
     busy = false;
@@ -194,6 +218,7 @@ async function step() {
 
   // Vez do humano.
   await arrangeHands();
+  if (!isCurrent(token)) return;
   if (round.isEmpty && round.forcedOpening) {
     setStatus(`Você começa: jogue a peça [${round.forcedOpening.a}|${round.forcedOpening.b}].`);
   } else if (round.canPlay()) {
@@ -253,7 +278,13 @@ function openModal(title: string, text: string, btn: string, onClick: () => void
   ui.modalText.textContent = text;
   ui.modalBtn.textContent = btn;
   ui.modal.hidden = false;
+  ui.game.inert = true;
+  stage.controls.enabled = false;
+  ui.modalBtn.focus();
   ui.modalBtn.onclick = () => {
+    ui.game.inert = false;
+    stage.controls.enabled = true;
+    ui.menuBtn.focus();
     ui.modal.hidden = true;
     onClick();
   };
@@ -261,10 +292,13 @@ function openModal(title: string, text: string, btn: string, onClick: () => void
 
 // ---------- Início ----------
 async function newRound() {
+  const token = session;
+  if (!isCurrent(token)) return;
   roundNo++;
   clearGhosts();
   selected = hovered = null;
-  round = new DominoRound({ starter: nextStarter });
+  const options = { starter: nextStarter, handSize };
+  round = new DominoRound(options);
   layout.reset();
   busy = true;
   updateHud();
@@ -282,13 +316,17 @@ async function newRound() {
       });
     }),
   );
+  if (!isCurrent(token)) return;
   setStatus('Embaralhando e distribuindo…');
   await sleep(250);
+  if (!isCurrent(token)) return;
   await arrangeHands(650);
-  busy = false;
+  if (!isCurrent(token)) return;
   const starter = round.turn === 0 ? 'Você começa' : 'A IA começa';
   setStatus(round.forcedOpening ? `${starter} com a maior peça.` : `${starter} (ganhou a rodada anterior).`);
   await sleep(900);
+  if (!isCurrent(token)) return;
+  busy = false;
   void step();
 }
 
@@ -340,7 +378,7 @@ function showGhosts(moves: Move[]) {
 }
 
 function canAct() {
-  return !busy && round && !round.isOver && round.turn === 0 && ui.modal.hidden;
+  return !inMenu && !busy && round && !round.isOver && round.turn === 0 && ui.modal.hidden;
 }
 
 let downAt: { x: number; y: number } | null = null;
@@ -390,8 +428,9 @@ canvas.addEventListener('pointermove', (ev) => {
 
 ui.btnDraw.addEventListener('click', async () => {
   if (!canAct() || !round.canDraw()) return;
+  const token = session;
   await doDraw();
-  void step();
+  if (isCurrent(token)) void step();
 });
 
 ui.btnPass.addEventListener('click', () => {
@@ -416,9 +455,11 @@ function buildViews() {
 buildViews();
 
 function frame(now: number) {
-  tweener.update(now);
-  stage.controls.update();
-  stage.renderer.render(stage.scene, stage.camera);
+  if (!inMenu) {
+    tweener.update(now);
+    if (stage.controls.enabled) stage.controls.update();
+    stage.renderer.render(stage.scene, stage.camera);
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -429,9 +470,62 @@ requestAnimationFrame(frame);
     return round;
   },
   play: (tileId: number, side: Side) => {
+    if (!canAct()) return;
     const m = round.legalMoves(0).find((x) => x.tile.id === tileId && x.side === side);
     if (m && canAct()) void doMove(m);
   },
 };
 
-newMatch();
+function showMenu() {
+  ++session;
+  inMenu = true;
+  busy = false;
+  // Resolve and stop every old tween; continuations are rejected by their token.
+  for (const v of views.values()) {
+    void tweener.to(v.root, { position: v.root.position.clone(), quaternion: v.root.quaternion.clone() }, { duration: 1 });
+    v.root.visible = false;
+  }
+  tweener.update(performance.now() + 2);
+  tweener = new Tweener();
+  clearGhosts();
+  selected = hovered = null;
+  downAt = null;
+  document.body.classList.remove('pointer');
+  ui.modal.hidden = true;
+  ui.modalBtn.onclick = null;
+  ui.game.hidden = true;
+  ui.game.inert = true;
+  stage.controls.enabled = false;
+  ui.menu.hidden = false;
+  ui.menuForm.querySelector<HTMLInputElement>('input:checked')?.focus();
+}
+
+ui.menuForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const value = Number(new FormData(ui.menuForm).get('mode'));
+  if (value !== 3 && value !== 5 && value !== 7) return;
+  handSize = value;
+  ++session;
+  inMenu = false;
+  ui.mode.textContent = `${modeNames[handSize]} · ${handSize} pedras`;
+  ui.menu.hidden = true;
+  ui.game.hidden = false;
+  ui.game.inert = false;
+  stage.controls.enabled = true;
+  for (const v of views.values()) v.root.visible = true;
+  stage.resize();
+  ui.menuBtn.focus();
+  newMatch();
+});
+ui.menuBtn.addEventListener('click', showMenu);
+ui.modalMenu.addEventListener('click', showMenu);
+// Native radios provide arrow-key selection. Keep dialog focus inside its controls.
+ui.modal.addEventListener('keydown', (event) => {
+  if (event.key !== 'Tab') return;
+  const controls = [...ui.modal.querySelectorAll<HTMLElement>('button, a[href]')];
+  const first = controls[0]!;
+  const last = controls[controls.length - 1]!;
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
+showMenu();

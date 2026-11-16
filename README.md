@@ -13,7 +13,7 @@ Outros comandos: `npm test` (regras, IA e posicionamento), `npm run build` (gera
 
 ## Regras
 
-- 28 peças, 7 para cada jogador, 14 no monte.
+- 28 peças. O menu oferece Clássico (7 pedras), Rápido (3) e Compacto (5) como mão inicial; as restantes ficam no monte. Os tamanhos alternativos dependem da integração das regras com `handSize`.
 - Na primeira rodada começa quem tem a maior dobrada (sem dobradas, a peça mais pesada). Depois, começa quem venceu a rodada anterior.
 - Sem peça que encaixe: compra do monte até conseguir jogar. Monte vazio: passa a vez.
 - **Batida:** quem acaba as peças ganha os pontos que sobraram na mão do adversário.
@@ -21,6 +21,9 @@ Outros comandos: `npm test` (regras, IA e posicionamento), `npm run build` (gera
 - A partida vai até 100 pontos.
 
 ## Como jogar
+
+- Escolha o modo no menu e pressione **Jogar**: a distribuição só começa depois disso. Use Tab para navegar e as setas para selecionar os cartões de modo.
+- O modo aparece durante a partida e continua nas próximas rodadas e em **Nova partida**. **Voltar ao menu** encerra a sessão atual e permite escolher novamente, reiniciando o placar ao jogar.
 
 - Clique numa peça destacada da sua mão. Se ela servir nas duas pontas, aparecem duas marcas douradas na mesa: clique onde quer jogar.
 - Arraste para girar a câmera e use a roda do mouse para aproximar.
