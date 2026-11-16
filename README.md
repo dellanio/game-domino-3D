@@ -2,6 +2,8 @@
 
 Dominó mano a mano contra a IA, no navegador, com peças modeladas em 3D e iluminação de estúdio (Three.js + Vite + TypeScript).
 
+[Jogar online](https://dellanio.github.io/game-domino-3D/) · [Código no GitHub](https://github.com/dellanio/game-domino-3D)
+
 ## Como rodar
 
 ```bash
@@ -13,7 +15,7 @@ Outros comandos: `npm test` (regras, IA e posicionamento), `npm run build` (gera
 
 ## Regras
 
-- 28 peças. O menu oferece Clássico (7 pedras), Rápido (3) e Compacto (5) como mão inicial; as restantes ficam no monte. Os tamanhos alternativos dependem da integração das regras com `handSize`.
+- 28 peças. O menu oferece Clássico (7 pedras por jogador e 14 no monte), Rápido (3 por jogador e 22 no monte) e Compacto (5 por jogador e 18 no monte).
 - Na primeira rodada começa quem tem a maior dobrada (sem dobradas, a peça mais pesada). Depois, começa quem venceu a rodada anterior.
 - Sem peça que encaixe: compra do monte até conseguir jogar. Monte vazio: passa a vez.
 - **Batida:** quem acaba as peças ganha os pontos que sobraram na mão do adversário.
