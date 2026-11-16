@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dominó 3D</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <div id="stage"></div>
+    <div class="vignette"></div>
+
+    <header class="hud-top">
+      <div class="brand"><img src="./src/assets/domino-3d-logo.png" alt="Dominó 3D" width="2172" height="724" decoding="async" /></div>
+      <div class="score">
+        <div class="player you"><small>Você</small><b id="score-you">0</b></div>
+        <div class="target">até <b id="target">100</b></div>
+        <div class="player ai"><small>IA</small><b id="score-ai">0</b></div>
+      </div>
+      <div class="round">Rodada <b id="round">1</b></div>
+    </header>
+
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+
+    <footer class="hud-bottom">
+      <button id="btn-draw" class="btn" hidden>Comprar <span id="boneyard-count"></span></button>
+      <button id="btn-pass" class="btn ghost" hidden>Passar a vez</button>
+    </footer>
+
+    <aside class="music-panel" aria-label="Áudio">
+      <button id="music-toggle" class="sound-toggle" type="button" aria-pressed="true" aria-label="Desligar som">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H3v6h3l5 4Z" />
+          <g class="sound-waves"><path d="M15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14" /></g>
+          <path class="sound-muted" d="m16 9 5 6m0-6-5 6" />
+        </svg>
+      </button>
+      <span id="music-status" class="music-status" role="status" aria-live="polite"></span>
+    </aside>
+
+    <div class="modal" id="modal" hidden>
+      <div class="card">
+        <h2 id="modal-title"></h2>
+        <p id="modal-text"></p>
+        <button id="modal-btn" class="btn"></button>
+        <a class="about-audio" href="./audio/credits.html" target="_blank" rel="noopener noreferrer" aria-label="Informações sobre a trilha sonora" title="Sobre a trilha sonora">ⓘ</a>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
