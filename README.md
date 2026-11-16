@@ -40,4 +40,4 @@ Outros comandos: `npm test` (regras, IA e posicionamento), `npm run build` (gera
 
 ## Música de fundo
 
-“Backbay Lounge”, Kevin MacLeod (incompetech.com), CC BY 4.0. Créditos e links estão na página acessível pelo ícone de informação ao fim da rodada e em `public/audio/ATTRIBUTION.txt`. A música começa após interação, repete em volume baixo e pausa ao ocultar a aba. O botão de alto-falante liga ou desliga música e efeitos juntos e salva a preferência. O impacto de cada pedra é sintetizado localmente e sincronizado com o fim da animação de pouso.
+“Backbay Lounge”, Kevin MacLeod (incompetech.com), CC BY 4.0. Créditos e links estão na página acessível pelo ícone de informação ao fim da rodada e em `public/audio/ATTRIBUTION.txt`. A música começa após interação, repete em volume baixo e pausa ao ocultar a aba. O botão de alto-falante liga ou desliga música e efeitos juntos e salva a preferência. O impacto de cada pedra usa o primeiro segundo do áudio fornecido pelo usuário (`public/audio/pedra-na-mesa-1s.wav`), em volume baixo, sincronizado com o fim da animação de pouso.

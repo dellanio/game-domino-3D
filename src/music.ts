@@ -8,6 +8,8 @@ let enabled = true;
 let interacted = false;
 let pending = false;
 let effectContext: AudioContext | undefined;
+let tileSound: AudioBuffer | undefined;
+let tileSoundLoading: Promise<void> | undefined;
 let musicVolume = 0.22;
 try {
   enabled = localStorage.getItem('domino-music-enabled') !== 'false';
@@ -16,47 +18,42 @@ try {
 } catch { /* O jogo também funciona sem armazenamento local. */ }
 audio.volume = musicVolume;
 
-// Impacto original sintetizado: estalo de resina e ressonância curta da mesa.
+// Trecho de um segundo do áudio fornecido pelo usuário, carregado antes das jogadas.
+function loadTileSound(ctx: AudioContext) {
+  if (tileSound || tileSoundLoading) return;
+  tileSoundLoading = (async () => {
+    try {
+      const response = await fetch(`${import.meta.env.BASE_URL}audio/pedra-na-mesa-1s.wav`);
+      if (!response.ok) throw new Error('Áudio da pedra indisponível');
+      tileSound = await ctx.decodeAudioData(await response.arrayBuffer());
+    } catch {
+      // Permite uma nova tentativa na próxima interação sem interromper a partida.
+    } finally {
+      tileSoundLoading = undefined;
+    }
+  })();
+}
+
 function unlockEffects() {
   if (!enabled) return;
   try {
     effectContext ??= new AudioContext();
+    loadTileSound(effectContext);
     if (effectContext.state === 'suspended') void effectContext.resume().catch(() => {});
   } catch { /* Sem Web Audio, a partida continua normalmente. */ }
 }
 
 export function playTileSound() {
-  if (!enabled || document.hidden || effectContext?.state !== 'running') return;
+  if (!enabled || document.hidden || effectContext?.state !== 'running' || !tileSound) return;
   const ctx = effectContext;
   const now = ctx.currentTime;
-  const noise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.065), ctx.sampleRate);
-  const samples = noise.getChannelData(0);
-  for (let i = 0; i < samples.length; i++) samples[i] = Math.random() * 2 - 1;
   const source = ctx.createBufferSource();
-  source.buffer = noise;
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = 1900 + Math.random() * 350;
-  filter.Q.value = 0.65;
+  source.buffer = tileSound;
   const impact = ctx.createGain();
-  impact.gain.setValueAtTime(0.0001, now);
-  impact.gain.exponentialRampToValueAtTime(0.3, now + 0.002);
-  impact.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
-  source.connect(filter).connect(impact).connect(ctx.destination);
-  source.onended = () => { source.disconnect(); filter.disconnect(); impact.disconnect(); };
-  source.start(now);
-  source.stop(now + 0.07);
-  const body = ctx.createOscillator();
-  const resonance = ctx.createGain();
-  body.frequency.setValueAtTime(310 + Math.random() * 25, now);
-  body.frequency.exponentialRampToValueAtTime(145, now + 0.09);
-  resonance.gain.setValueAtTime(0.0001, now);
-  resonance.gain.exponentialRampToValueAtTime(0.18, now + 0.003);
-  resonance.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
-  body.connect(resonance).connect(ctx.destination);
-  body.onended = () => { body.disconnect(); resonance.disconnect(); };
-  body.start(now);
-  body.stop(now + 0.13);
+  impact.gain.value = 0.3;
+  source.connect(impact).connect(ctx.destination);
+  source.onended = () => { source.disconnect(); impact.disconnect(); };
+  source.start(now, 0, Math.min(1, tileSound.duration));
 }
 function save(key: string, value: string) {
   try { localStorage.setItem(key, value); } catch { /* Preferência vale nesta sessão. */ }
