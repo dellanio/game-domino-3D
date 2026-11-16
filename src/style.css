@@ -64,38 +64,82 @@ body {
 }
 
 .score {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
-  gap: 18px;
-  background: var(--panel);
-  border: 1px solid var(--line);
+  gap: 14px;
+  background:
+    linear-gradient(160deg, #1b3b2e, #081c16 65%, #10281e) padding-box,
+    linear-gradient(135deg, #fff1b8 0%, #d9b65e 22%, #856122 45%, #f6da82 62%, #ad7e2d 85%, #ffe7a0) border-box;
+  border: 3px solid transparent;
   border-radius: 999px;
-  padding: 6px 22px;
-  backdrop-filter: blur(8px);
+  padding: 10px 22px;
+  box-shadow:
+    0 7px 18px #0008,
+    0 1px 0 #fae2a33d,
+    inset 0 2px 4px #0008,
+    inset 0 -1px 0 #e8c66b40;
+}
+
+.score::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid #cba64b59;
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .score .player {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 52px;
+  gap: 3px;
+  min-width: 58px;
 }
 
 .score small {
-  color: var(--muted);
-  font-size: 11px;
+  color: #dfc688;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.15em;
+  text-shadow: 0 1px 2px #000;
 }
 
 .score b {
-  font-size: 24px;
+  color: #f7e8b7;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 32px;
+  line-height: 32px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 0 #59401b, 0 3px 5px #0009;
 }
 
 .score .target {
-  color: var(--muted);
-  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 70px;
+  padding: 0 15px;
+  border-inline: 1px solid #d8b25e40;
+  color: #c5b78f;
+  font-size: 9px;
+  line-height: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.score .target b {
+  font-size: 20px;
+  line-height: 23px;
+  letter-spacing: 0.02em;
+  color: #dcc386;
 }
 
 .round {
@@ -111,7 +155,7 @@ body {
 .status {
   position: fixed;
   left: 50%;
-  top: 92px;
+  top: 114px;
   transform: translateX(-50%);
   background: var(--panel);
   border: 1px solid var(--line);
