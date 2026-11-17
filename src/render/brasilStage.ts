@@ -17,6 +17,10 @@ export function concreteTexture(): THREE.DataTexture {
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(5, 4);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.anisotropy = 8;
   texture.needsUpdate = true;
   return texture;
 }
@@ -48,18 +52,25 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   for (const x of [-width * 0.32, width * 0.32]) {
     mesh(new RoundedBoxGeometry(1.4, 2.4, depth * 0.65, 3, 0.12), concrete, x, -2.2, 0);
   }
-  const paving = new THREE.MeshStandardMaterial({ color: 0xc3bca9, map: grain, roughness: 1, bumpMap: grain, bumpScale: 0.06 });
+  const pavingGrain = grain.clone();
+  pavingGrain.repeat.set(40, 40);
+  const paving = new THREE.MeshStandardMaterial({ color: 0xc3bca9, map: pavingGrain, roughness: 1, bumpMap: pavingGrain, bumpScale: 0.06 });
   const floor = mesh(new THREE.PlaneGeometry(200, 200), paving, 0, -3.45, 0);
   floor.rotation.x = -Math.PI / 2;
   const dark = new THREE.MeshStandardMaterial({ color: 0x454841, roughness: 1 });
-  // Geometric inlays along the perimeter leave the central tile arrangement unobstructed.
-  for (const z of [-depth * 0.40, depth * 0.40]) {
-    const line = mesh(new THREE.PlaneGeometry(width * 0.78, 0.045), dark, 0, 0.002, z);
+  // Inlaid square-table markings evoke the concrete games tables of public plazas.
+  const boardX = width * 0.39, boardZ = depth * 0.30;
+  for (const z of [-boardZ, boardZ]) {
+    const line = mesh(new THREE.PlaneGeometry(boardX * 2, 0.065), dark, 0, 0.002, z);
     line.rotation.x = -Math.PI / 2;
-    for (const x of [-width * 0.39, width * 0.39]) {
-      const mark = mesh(new THREE.PlaneGeometry(0.8, 0.8), dark, x, 0.003, z);
-      mark.rotation.set(-Math.PI / 2, 0, Math.PI / 4);
+    for (const x of [-boardX, boardX]) {
+      const mark = mesh(new THREE.PlaneGeometry(3.2, 0.065), dark, x - Math.sign(x) * 1.13, 0.003, z - Math.sign(z) * 1.13);
+      mark.rotation.set(-Math.PI / 2, 0, Math.sign(x * z) * Math.PI / 4);
     }
+  }
+  for (const x of [-boardX, boardX]) {
+    const line = mesh(new THREE.PlaneGeometry(0.065, boardZ * 2), dark, x, 0.002, 0);
+    line.rotation.x = -Math.PI / 2;
   }
   const sun = new THREE.DirectionalLight(0xfff3da, 3.1);
   sun.position.set(-12, 26, 14);
@@ -69,6 +80,6 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   sun.shadow.normalBias = 0.025;
   sun.shadow.bias = -0.00015;
   sun.shadow.radius = 2;
-  group.add(sun, sun.target, new THREE.HemisphereLight(0xcde7ff, 0xa59a82, 1.1));
+  group.add(sun, sun.target, new THREE.HemisphereLight(0xcde7ff, 0xa59a82, 0.65));
   return group;
 }

@@ -437,6 +437,7 @@ body[data-theme="brasil"] .btn.round-next { background: #e1d2af; color: #272b30;
 body[data-theme="brasil"] .btn.menu-return::before { border-color: #ac946055; }
 body[data-theme="brasil"] .card { background: #2b2d2f; }
 body[data-theme="brasil"] .sound-toggle { background: #2b2d2f; }
+body[data-theme="brasil"] .round { background: #2b2d2fed; border: 1px solid #a68d5955; border-radius: 16px; padding: 8px 12px; }
 body[data-theme="brasil"] .brand { width: min(270px, 100%); }
 body[data-theme="brasil"] .brand img { height: 94px; }
 body[data-theme="brasil"] .status { top: 128px; }
