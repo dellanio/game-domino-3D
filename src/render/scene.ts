@@ -194,9 +194,11 @@ export function createStage(container: HTMLElement): Stage {
   defaultGroup.add(...defaultStage.children.slice());
   scene.add(defaultGroup);
   let brasilGroup: THREE.Group | undefined;
+  let currentTheme: ThemeId = 'default';
   const defaultBackground = scene.background;
   const defaultFog = scene.fog;
   const setTheme = (theme: ThemeId) => {
+    currentTheme = theme;
     const brasil = theme === 'brasil';
     if (brasil && !brasilGroup) {
       brasilGroup = buildBrasilStage(TABLE_W, TABLE_D);
@@ -207,6 +209,7 @@ export function createStage(container: HTMLElement): Stage {
     scene.background = brasil ? new THREE.Color(0xc9dbe8) : defaultBackground;
     scene.fog = brasil ? new THREE.Fog(0xc9dbe8, 65, 115) : defaultFog;
     scene.environmentIntensity = brasil ? 0.55 : 0.3;
+    resize();
   };
 
   const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 120);
@@ -229,7 +232,7 @@ export function createStage(container: HTMLElement): Stage {
     renderer.setSize(w, h);
     camera.aspect = w / h;
     // Em telas estreitas, afasta a câmera para caber a mesa.
-    camera.fov = w / h < 1.2 ? 56 : 41;
+    camera.fov = w / h < 1.2 ? 56 : currentTheme === 'brasil' ? 48 : 41;
     camera.updateProjectionMatrix();
   };
   resize();
@@ -242,6 +245,7 @@ export function createStage(container: HTMLElement): Stage {
     const materials = new Set<THREE.Material>();
     const textures = new Set<THREE.Texture>();
     for (const group of [defaultGroup, brasilGroup]) group?.traverse(object => {
+      if (object instanceof THREE.InstancedMesh) object.dispose();
       if (object instanceof THREE.Mesh) {
         geometries.add(object.geometry);
         for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
