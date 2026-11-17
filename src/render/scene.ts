@@ -232,7 +232,7 @@ export function createStage(container: HTMLElement): Stage {
     renderer.setSize(w, h);
     camera.aspect = w / h;
     // Em telas estreitas, afasta a câmera para caber a mesa.
-    camera.fov = w / h < 1.2 ? 56 : currentTheme === 'brasil' ? 48 : 41;
+    camera.fov = w / h < 1.2 || currentTheme === 'brasil' ? 56 : 41;
     camera.updateProjectionMatrix();
   };
   resize();

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { buildBrasilProps } from './brasilProps';
+import { buildBrasilBackground } from './brasilBackground';
 
 /** Seamless, deterministic cement mottling with fine aggregate and small pores. */
 export function concreteTexture(): THREE.DataTexture {
@@ -104,6 +105,7 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   const floor = mesh(new THREE.PlaneGeometry(200, 200), paving, 0, -3.45, 0);
   floor.rotation.x = -Math.PI / 2;
   group.add(buildBrasilProps(width, depth));
+  group.add(buildBrasilBackground(width, depth));
   const sun = new THREE.DirectionalLight(0xfffaf3, 3.1);
   sun.position.set(-12, 26, 14);
   sun.castShadow = true;
