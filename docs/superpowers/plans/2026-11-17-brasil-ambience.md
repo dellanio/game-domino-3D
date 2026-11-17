@@ -47,7 +47,7 @@ Produces `buildBrasilProps(width: number, depth: number): THREE.Group`.
 
 Files: create `src/render/brasilBackground.ts`, `tests/brasilBackground.test.ts`; modify `src/render/brasilStage.ts` and README.
 
-Produces `buildBrasilBackground(width: number, depth: number): THREE.Group`. Consumes `buildBrasilProps(width, depth)` after Tasks 1 and 2 are merged.
+Produces `buildBrasilBackground(width: number, depth: number): THREE.Group` independently. The pilot integrates this and `buildBrasilProps(width, depth)` after all three technical review gates, keeping source ownership separate.
 
 - [ ] Add textured plaster perimeter walls and one or two stylized tropical trees using restrained muted foliage, trunk and branch shapes with coherent scale. Keep clear views to table.
 - [ ] Integrate both decorative helpers into Brasil group. No depth-of-field dependency. Fit background into current fog and shadows.
