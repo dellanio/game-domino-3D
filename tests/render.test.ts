@@ -4,6 +4,37 @@ import { createTileView, materials, BRASIL_PIP_COLORS } from '../src/render/tile
 import { buildBrasilStage } from '../src/render/brasilStage';
 
 describe('Brasil rendering', () => {
+  it('exposes recessed colored floors through real holes from multiple viewing angles', () => {
+    for (let value = 1; value <= 6; value++) {
+      const view = createTileView({ id: value, a: value, b: value });
+      const defaultGeometry = view.body.geometry;
+      view.setTheme('brasil');
+      const recessedGeometry = view.body.geometry;
+      view.root.updateMatrixWorld(true);
+      const pips = view.root.children.filter(child => child.userData.pipValue !== undefined) as THREE.Mesh[];
+      for (const pip of pips) {
+        pip.geometry.computeBoundingBox();
+        const top = pip.position.y + pip.geometry.boundingBox!.max.y;
+        expect(0.21 - top).toBeGreaterThan(0.015);
+        for (const direction of [new THREE.Vector3(0, 1, 0), new THREE.Vector3(0.6, 1, 0.4), new THREE.Vector3(-0.6, 1, -0.4)]) {
+          direction.normalize();
+          const target = new THREE.Vector3(pip.position.x, top, pip.position.z);
+          const ray = new THREE.Raycaster(target.clone().addScaledVector(direction, 2), direction.clone().negate());
+          const hits = ray.intersectObjects([view.body, pip]);
+          expect(hits.length).toBeGreaterThan(0);
+          expect(hits[0].object).toBe(pip);
+        }
+      }
+      view.setTheme('default');
+      expect(view.body.geometry).toBe(defaultGeometry);
+      view.setTheme('brasil');
+      expect(view.body.geometry).toBe(recessedGeometry);
+      let disposed = false;
+      recessedGeometry.addEventListener('dispose', () => { disposed = true; });
+      view.dispose();
+      expect(disposed).toBe(true);
+    }
+  });
   it('colors each half by its value and restores the same body and default materials', () => {
     expect(BRASIL_PIP_COLORS.slice(1)).toEqual([0xffffff, 0xf04b24, 0x101014, 0x168342, 0xffd526, 0xf04b24]);
     for (let value = 0; value <= 6; value++) {
