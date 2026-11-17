@@ -206,9 +206,9 @@ export function createStage(container: HTMLElement): Stage {
     }
     defaultGroup.visible = !brasil;
     if (brasilGroup) brasilGroup.visible = brasil;
-    scene.background = brasil ? new THREE.Color(0xc9dbe8) : defaultBackground;
-    scene.fog = brasil ? new THREE.Fog(0xc9dbe8, 65, 115) : defaultFog;
-    scene.environmentIntensity = brasil ? 0.55 : 0.3;
+    scene.background = brasil ? new THREE.Color(0xd8cbbb) : defaultBackground;
+    scene.fog = brasil ? new THREE.Fog(0xd8cbbb, 65, 115) : defaultFog;
+    scene.environmentIntensity = brasil ? 0.25 : 0.3;
     resize();
   };
 

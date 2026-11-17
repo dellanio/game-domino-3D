@@ -61,7 +61,9 @@ describe('Portuguese pavement', () => {
         object.material.dispose();
       }
     });
-    expect(maps.size).toBe(3);
+    expect([...maps]).toEqual(expect.arrayContaining([
+      surface.material.map, floor.material.map, floor.material.bumpMap,
+    ]));
     expect(floor.material.map!.source === surface.material.map!.source).toBe(false);
     const sun = stage.children.find(object => object instanceof THREE.DirectionalLight) as THREE.DirectionalLight;
     expect(sun.position.y / Math.hypot(sun.position.x, sun.position.z)).toBeLessThan(0.4);

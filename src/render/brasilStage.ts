@@ -51,6 +51,16 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   const concrete = new THREE.MeshStandardMaterial({ color: 0xb8babd, map: grain,
     bumpMap: grain, bumpScale: 0.065, roughness: 0.98 });
   const mesh = (geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number) => {
+    // World-scaled concrete coordinates avoid stretching grain into stripes on long rims.
+    if (geometry instanceof RoundedBoxGeometry) {
+      const p = geometry.attributes.position, n = geometry.attributes.normal, uv = geometry.attributes.uv;
+      for (let i = 0; i < p.count; i++) {
+        const nx = Math.abs(n.getX(i)), ny = Math.abs(n.getY(i)), nz = Math.abs(n.getZ(i));
+        const u = nx > ny && nx > nz ? p.getZ(i) + z : p.getX(i) + x;
+        const v = ny >= nx && ny >= nz ? p.getZ(i) + z : p.getY(i) + y;
+        uv.setXY(i, u * 0.08, v * 0.08);
+      }
+    }
     const result = new THREE.Mesh(geometry, material);
     result.position.set(x, y, z);
     result.castShadow = result.receiveShadow = true;
@@ -77,7 +87,7 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   floor.rotation.x = -Math.PI / 2;
   group.add(buildBrasilProps(width, depth));
   group.add(buildBrasilBackground(width, depth));
-  const sun = new THREE.DirectionalLight(0xffd3a0, 2.5);
+  const sun = new THREE.DirectionalLight(0xffbf80, 3);
   sun.position.set(-32, 15, 24);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -86,6 +96,6 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   sun.shadow.normalBias = 0.025;
   sun.shadow.bias = -0.00015;
   sun.shadow.radius = 4;
-  group.add(sun, sun.target, new THREE.HemisphereLight(0xf5f7ff, 0xaaa49a, 1.15));
+  group.add(sun, sun.target, new THREE.HemisphereLight(0xf5f7ff, 0xaaa49a, 0.5));
   return group;
 }

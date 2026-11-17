@@ -2,19 +2,19 @@ import * as THREE from 'three';
 
 /** Painted plaster: faded patches, exposed render and damp staining near the foot. */
 function plasterTexture(): THREE.DataTexture {
-  const size = 128;
-  const pixels = new Uint8Array(size * size * 4);
+  const width = 512, height = 128;
+  const pixels = new Uint8Array(width * height * 4);
   let seed = 731;
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     const grain = (seed / 0xffffffff - 0.5) * 17;
     const patch = Math.sin(x * 0.081 + Math.sin(y * 0.11) * 2) * Math.cos(y * 0.067);
     const chipped = patch > 0.56;
     const damp = Math.max(0, 1 - y / 30) * (21 + 12 * Math.sin(x * 0.12));
     const value = (chipped ? 151 : 202) + patch * 12 + grain - damp;
-    pixels.set([value + 9, value + 2, value - 14, 255], (y * size + x) * 4);
+    pixels.set([value + 9, value + 2, value - 14, 255], (y * width + x) * 4);
   }
-  const texture = new THREE.DataTexture(pixels, size, size);
+  const texture = new THREE.DataTexture(pixels, width, height);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.magFilter = THREE.LinearFilter;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
