@@ -41,9 +41,13 @@ describe('Brasil background', () => {
       (group.getObjectByName('urban-plaster-wall') as THREE.Mesh).material as THREE.MeshStandardMaterial;
     const first = wallMaterial(a).map! as THREE.DataTexture;
     const second = wallMaterial(b).map! as THREE.DataTexture;
-    expect(first).not.toBe(second);
-    expect(first.image.data).not.toBe(second.image.data);
-    expect(first.image.data).toEqual(second.image.data);
+    expect(first === second).toBe(false);
+    expect(first.image.data === second.image.data).toBe(false);
+    const firstPixels = first.image.data as Uint8Array;
+    const secondPixels = second.image.data as Uint8Array;
+    // Compare every byte without the generic matcher's per-index metadata cost.
+    expect(firstPixels.length).toBe(secondPixels.length);
+    expect(firstPixels.every((value, index) => value === secondPixels[index])).toBe(true);
     expect(new Set(first.image.data).size).toBeGreaterThan(30);
     let disposed = false;
     first.addEventListener('dispose', () => { disposed = true; });

@@ -44,6 +44,12 @@ describe('Portuguese pavement', () => {
 
   it('preserves the concrete surface and exposes all maps to disposal traversal', () => {
     const stage = buildBrasilStage(30, 22);
+    expect(stage.getObjectByName('brasil-background')).toBeUndefined();
+    expect(stage.getObjectByName('urban-plaster-wall')).toBeUndefined();
+    expect(stage.getObjectByName('almond-trunk')).toBeUndefined();
+    expect(stage.getObjectByName('chair-0')).toBeUndefined();
+    expect(stage.getObjectByName('boteco-rim')).toBeUndefined();
+    expect(stage.getObjectByName('bottle-cap')).toBeUndefined();
     const meshes = stage.children.filter(child => child instanceof THREE.Mesh) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>[];
     const surface = meshes.find(mesh => mesh.position.y === 0)!;
     const floor = meshes.find(mesh => mesh.position.y === -3.45)!;
