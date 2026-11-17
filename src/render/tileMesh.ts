@@ -203,8 +203,10 @@ export function createTileView(tile: Tile): TileView {
     const brasil = theme === 'brasil';
     if (brasil) brasilBody ??= recessedBody(tile);
     body.geometry = brasil ? brasilBody! : bodyGeo;
-    bodyMaterial.color.setHex(brasil ? 0x164bcc : 0xf3ecdc);
-    bodyMaterial.sheenColor.setHex(brasil ? 0x719aff : 0xfff6e0);
+    bodyMaterial.color.setHex(brasil ? 0x082777 : 0xf3ecdc);
+    bodyMaterial.sheenColor.setHex(brasil ? 0x244a96 : 0xfff6e0);
+    bodyMaterial.clearcoat = brasil ? 0.65 : materials.body.clearcoat;
+    bodyMaterial.roughness = brasil ? 0.4 : materials.body.roughness;
     bar.material = brasil ? whiteBar : materials.brass;
     pin.material = backPin.material = brasil ? steel : materials.brass;
     for (const child of root.children) {

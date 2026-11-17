@@ -67,7 +67,7 @@ describe('Brasil rendering', () => {
       for (let repeat = 0; repeat < 20; repeat++) {
         view.setTheme('brasil');
         expect(view.bodyMaterial).toBe(original);
-        expect(original.color.getHex()).toBe(0x164bcc);
+        expect(original.color.getHex()).toBe(0x082777);
         const pips = view.root.children.filter(child => child.userData.pipValue !== undefined) as THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>[];
         expect(pips).toHaveLength(value + 6);
         for (const pip of pips) {
@@ -89,7 +89,7 @@ describe('Brasil rendering', () => {
     const surface = group.children.find(child => child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry && child.position.y === 0) as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
     expect(surface.geometry.parameters).toMatchObject({ width: 30, height: 22 });
     expect(surface.material.map).toBe(surface.material.bumpMap);
-    expect(surface.material.map).toBe(surface.material.roughnessMap);
+    expect(surface.material.roughness).toBe(0.98);
     expect(surface.material.map).toBeInstanceOf(THREE.DataTexture);
     expect(group.children.some(child => child instanceof THREE.DirectionalLight && child.castShadow)).toBe(true);
   });

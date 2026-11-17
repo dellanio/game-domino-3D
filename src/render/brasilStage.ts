@@ -1,21 +1,37 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
-/** Local, deterministic aggregate grain, shared by color, bump and roughness. */
+/** Seamless, deterministic cement mottling with fine aggregate and small pores. */
 export function concreteTexture(): THREE.DataTexture {
-  const size = 256;
+  const size = 512;
   const data = new Uint8Array(size * size * 4);
   let seed = 429;
+  const noise = (x: number, y: number, cells: number): number => {
+    const gx = x / size * cells, gy = y / size * cells;
+    const ix = Math.floor(gx), iy = Math.floor(gy);
+    const smooth = (v: number) => v * v * (3 - 2 * v);
+    const tx = smooth(gx - ix), ty = smooth(gy - iy);
+    const hash = (a: number, b: number) => {
+      let h = Math.imul(a % cells + 37, 374761393) ^ Math.imul(b % cells + 71, 668265263);
+      h = Math.imul(h ^ (h >>> 13), 1274126177);
+      return ((h ^ (h >>> 16)) >>> 0) / 0xffffffff;
+    };
+    const a = hash(ix, iy) * (1 - tx) + hash(ix + 1, iy) * tx;
+    const b = hash(ix, iy + 1) * (1 - tx) + hash(ix + 1, iy + 1) * tx;
+    return a * (1 - ty) + b * ty - 0.5;
+  };
   for (let i = 0; i < size * size; i++) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
     const grain = seed / 0xffffffff;
     const x = i % size, y = Math.floor(i / size);
-    const v = 193 + grain * 34 + Math.sin(x / 19) * Math.sin(y / 27) * 7;
-    data.set([v, v - 3, v - 9, 255], i * 4);
+    const mottling = noise(x, y, 4) * 36 + noise(x, y, 16) * 18 + noise(x, y, 64) * 9;
+    const pore = grain < 0.012 ? -32 : 0;
+    const v = Math.round(166 + mottling + (grain - 0.5) * 13 + pore);
+    data.set([v, v, v + 1, 255], i * 4);
   }
   const texture = new THREE.DataTexture(data, size, size);
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(5, 4);
+  texture.repeat.set(2, 2);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.magFilter = THREE.LinearFilter;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -29,8 +45,8 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   const group = new THREE.Group();
   group.name = 'brasil-stage';
   const grain = concreteTexture();
-  const concrete = new THREE.MeshStandardMaterial({ color: 0xeee9dd, map: grain,
-    roughnessMap: grain, bumpMap: grain, bumpScale: 0.035, roughness: 0.96 });
+  const concrete = new THREE.MeshStandardMaterial({ color: 0xb8babd, map: grain,
+    bumpMap: grain, bumpScale: 0.065, roughness: 0.98 });
   const mesh = (geometry: THREE.BufferGeometry, material: THREE.Material, x: number, y: number, z: number) => {
     const result = new THREE.Mesh(geometry, material);
     result.position.set(x, y, z);
@@ -43,7 +59,7 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   const surface = mesh(new THREE.PlaneGeometry(width, depth), concrete, 0, 0, 0);
   surface.rotation.x = -Math.PI / 2;
   const lipMaterial = concrete.clone();
-  lipMaterial.color.setHex(0xd7d2c7);
+  lipMaterial.color.setHex(0xa3a6aa);
   for (const [x, z, w, d] of [
     [0, -depth / 2 - 0.22, width + 0.9, 0.44], [0, depth / 2 + 0.22, width + 0.9, 0.44],
     [-width / 2 - 0.22, 0, 0.44, depth], [width / 2 + 0.22, 0, 0.44, depth],
@@ -54,25 +70,10 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   }
   const pavingGrain = grain.clone();
   pavingGrain.repeat.set(40, 40);
-  const paving = new THREE.MeshStandardMaterial({ color: 0xc3bca9, map: pavingGrain, roughness: 1, bumpMap: pavingGrain, bumpScale: 0.06 });
+  const paving = new THREE.MeshStandardMaterial({ color: 0xa5a6a8, map: pavingGrain, roughness: 1, bumpMap: pavingGrain, bumpScale: 0.06 });
   const floor = mesh(new THREE.PlaneGeometry(200, 200), paving, 0, -3.45, 0);
   floor.rotation.x = -Math.PI / 2;
-  const dark = new THREE.MeshStandardMaterial({ color: 0x454841, roughness: 1 });
-  // Inlaid square-table markings evoke the concrete games tables of public plazas.
-  const boardX = width * 0.39, boardZ = depth * 0.30;
-  for (const z of [-boardZ, boardZ]) {
-    const line = mesh(new THREE.PlaneGeometry(boardX * 2, 0.065), dark, 0, 0.002, z);
-    line.rotation.x = -Math.PI / 2;
-    for (const x of [-boardX, boardX]) {
-      const mark = mesh(new THREE.PlaneGeometry(3.2, 0.065), dark, x - Math.sign(x) * 1.13, 0.003, z - Math.sign(z) * 1.13);
-      mark.rotation.set(-Math.PI / 2, 0, Math.sign(x * z) * Math.PI / 4);
-    }
-  }
-  for (const x of [-boardX, boardX]) {
-    const line = mesh(new THREE.PlaneGeometry(0.065, boardZ * 2), dark, x, 0.002, 0);
-    line.rotation.x = -Math.PI / 2;
-  }
-  const sun = new THREE.DirectionalLight(0xfff3da, 3.1);
+  const sun = new THREE.DirectionalLight(0xfffaf3, 3.1);
   sun.position.set(-12, 26, 14);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
