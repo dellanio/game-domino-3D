@@ -9,10 +9,15 @@
   <body>
     <section id="menu" class="start-menu" aria-labelledby="menu-title">
       <form id="menu-form" class="menu-card">
-        <img class="menu-logo" src="./src/assets/domino-3d-logo.png" alt="Dominó 3D" width="2172" height="724" />
-        <p class="eyebrow">Sua próxima jogada começa aqui</p>
+        <img id="menu-logo" class="menu-logo" alt="Dominó 3D" width="2172" height="724" />
+        <p id="menu-context" class="eyebrow">Sua próxima jogada começa aqui</p>
         <h1 id="menu-title">A mesa está pronta.</h1>
         <p class="menu-intro">Você contra a IA. Escolha sua mão inicial e jogue até 100 pontos.</p>
+        <fieldset class="theme-options">
+          <legend>Tema</legend>
+          <label><input type="radio" name="theme" value="default" checked /><span>Default</span></label>
+          <label><input type="radio" name="theme" value="brasil" /><span>Brasil</span></label>
+        </fieldset>
         <fieldset class="mode-options">
           <legend>Escolha o modo de jogo</legend>
           <label class="mode-card"><input type="radio" name="mode" value="7" checked /><span><strong>Clássico</strong><b>7 pedras</b><small>A experiência tradicional, com mais opções na mão.</small></span></label>
@@ -28,7 +33,7 @@
     <div class="vignette"></div>
 
     <header class="hud-top">
-      <div class="brand"><img src="./src/assets/domino-3d-logo.png" alt="Dominó 3D" width="2172" height="724" decoding="async" /></div>
+      <div class="brand"><img id="hud-logo" alt="Dominó 3D" width="2172" height="724" decoding="async" /></div>
       <div class="score" role="group" aria-label="Placar da partida">
         <div class="player you"><small>Você</small><b id="score-you">0</b></div>
         <div class="target"><span>Meta</span><b id="target">100</b></div>
