@@ -58,7 +58,7 @@ describe('Brasil rendering', () => {
     }
   });
   it('colors each half by its value and restores the same body and default materials', () => {
-    expect(BRASIL_PIP_COLORS.slice(1)).toEqual([0xffffff, 0xf04b24, 0x101014, 0x168342, 0xffd526, 0xf04b24]);
+    expect(BRASIL_PIP_COLORS.slice(1)).toEqual(Array(6).fill(0xffffff));
     for (let value = 0; value <= 6; value++) {
       const view = createTileView({ id: value, a: value, b: 6 });
       const original = view.bodyMaterial;

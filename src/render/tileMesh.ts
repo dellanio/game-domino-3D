@@ -106,7 +106,7 @@ export interface TileView {
   bodyMaterial: THREE.MeshPhysicalMaterial;
 }
 
-export const BRASIL_PIP_COLORS = [0, 0xffffff, 0xf04b24, 0x101014, 0x168342, 0xffd526, 0xf04b24] as const;
+export const BRASIL_PIP_COLORS = [0, 0xffffff, 0xffffff, 0xffffff, 0xffffff, 0xffffff, 0xffffff] as const;
 const brasilPips = BRASIL_PIP_COLORS.map(color => new THREE.MeshPhysicalMaterial({ color, roughness: 0.3, clearcoat: 0.7 }));
 const whiteBar = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
 const steel = new THREE.MeshStandardMaterial({ color: 0xc4c9d0, metalness: 1, roughness: 0.23 });
