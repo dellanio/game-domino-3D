@@ -28,9 +28,9 @@
 
 Files: `src/render/brasilStage.ts`, optional `src/render/brasilPavement.ts`, `tests/brasilPavement.test.ts`.
 
-- [ ] Implement deterministic small stone mosaics with black/white wave bands, subtle aggregate and mortar relief. Keep table maps independent.
-- [ ] Set low warm afternoon sun with long soft shadows, adequate frustum, neutral fill for tile readability. No Default changes.
-- [ ] Verify local generation, surface and resource ownership; npm test and npm run build. Review and merge into target.
+- [x] Implement deterministic small stone mosaics with black/white wave bands, subtle aggregate and mortar relief. Keep table maps independent.
+- [x] Set low warm afternoon sun with long soft shadows, adequate frustum, neutral fill for tile readability. No Default changes.
+- [x] Verify local generation, surface and resource ownership; npm test and npm run build. Review and merge into target.
 
 ## Task 2: Chairs and boteco props
 
@@ -38,10 +38,10 @@ Files: create `src/render/brasilProps.ts`, `tests/brasilProps.test.ts`. Do not m
 
 Produces `buildBrasilProps(width: number, depth: number): THREE.Group`.
 
-- [ ] Build recognizable lightweight monobloc chairs: white sun-worn molded seat/back, open back slots and four legs, one at casual angle. Seats above floor and below table.
-- [ ] Add a red coaster, American beer glass with faceted sides, amber liquid and foam/condensation, metallic plate with bite-sized food, a few caps. Keep all placements outside play rectangle.
-- [ ] Geometry must be plausible at default camera; no oversized garnish or scattered clutter.
-- [ ] Test finite transforms, bounds outside play rectangle and bounded node count; npm test/build. Review and merge helper without integration.
+- [x] Build recognizable lightweight monobloc chairs: white sun-worn molded seat/back, open back slots and four legs, one at casual angle. Seats above floor and below table.
+- [x] Add a red coaster, American beer glass with faceted sides, amber liquid and foam/condensation, metallic plate with bite-sized food, a few caps. Keep all placements outside play rectangle.
+- [x] Geometry must be plausible at default camera; no oversized garnish or scattered clutter.
+- [x] Test finite transforms, bounds outside play rectangle and bounded node count; npm test/build. Review and merge helper without integration.
 
 ## Task 3: Background and final integration
 
@@ -49,7 +49,7 @@ Files: create `src/render/brasilBackground.ts`, `tests/brasilBackground.test.ts`
 
 Produces `buildBrasilBackground(width: number, depth: number): THREE.Group` independently. The pilot integrates this and `buildBrasilProps(width, depth)` after all three technical review gates, keeping source ownership separate.
 
-- [ ] Add textured plaster perimeter walls and one or two stylized tropical trees using restrained muted foliage, trunk and branch shapes with coherent scale. Keep clear views to table.
-- [ ] Integrate both decorative helpers into Brasil group. No depth-of-field dependency. Fit background into current fog and shadows.
-- [ ] Verify geometry transforms, theme lifecycle, no repeated allocations, npm test/build.
-- [ ] Review and merge. Pilot checks browser at desktop/mobile and alternate angles; complete a game interaction and theme round trip before main merge/push.
+- [x] Add textured plaster perimeter walls and one or two stylized tropical trees using restrained muted foliage, trunk and branch shapes with coherent scale. Keep clear views to table.
+- [x] Integrate both decorative helpers into Brasil group. No depth-of-field dependency. Fit background into current fog and shadows.
+- [x] Verify geometry transforms, theme lifecycle, no repeated allocations, npm test/build.
+- [x] Review and merge. Pilot checks browser at desktop/mobile and alternate angles; complete a game interaction and theme round trip before main merge/push.
