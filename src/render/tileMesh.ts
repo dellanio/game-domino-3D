@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { TILE_L, TILE_W } from '../game/layout';
+import type { ThemeId } from '../theme';
 import type { Tile } from '../game/rules';
 
 export const TILE_H = 0.42;
@@ -94,6 +95,8 @@ const PIP_LAYOUT: Record<number, [number, number][]> = {
 };
 
 export interface TileView {
+  setTheme(theme: ThemeId): void;
+  dispose(): void;
   tile: Tile;
   /** Nó externo: posição e giro na mesa. */
   root: THREE.Group;
@@ -102,11 +105,17 @@ export interface TileView {
   bodyMaterial: THREE.MeshPhysicalMaterial;
 }
 
+export const BRASIL_PIP_COLORS = [0, 0xffffff, 0xf04b24, 0x101014, 0x168342, 0xffd526, 0xf04b24] as const;
+const brasilPips = BRASIL_PIP_COLORS.map(color => new THREE.MeshPhysicalMaterial({ color, roughness: 0.3, clearcoat: 0.7 }));
+const whiteBar = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+const steel = new THREE.MeshStandardMaterial({ color: 0xc4c9d0, metalness: 1, roughness: 0.23 });
+
 function addPips(group: THREE.Group, value: number, cx: number): void {
   for (const [px, pz] of PIP_LAYOUT[value]!) {
     const pip = new THREE.Mesh(pipGeo, materials.pip);
     // Disco preto embutido na face, rente à superfície: ponto pintado e envernizado.
     pip.position.set(cx + px, TILE_H / 2 - 0.006, pz);
+    pip.userData.pipValue = value;
     pip.castShadow = false;
     group.add(pip);
   }
@@ -141,5 +150,18 @@ export function createTileView(tile: Tile): TileView {
   backPin.position.y = -TILE_H / 2 - 0.008;
   root.add(backPin);
 
-  return { tile, root, body, bodyMaterial };
+  const setTheme = (theme: ThemeId) => {
+    const brasil = theme === 'brasil';
+    bodyMaterial.color.setHex(brasil ? 0x164bcc : 0xf3ecdc);
+    bodyMaterial.sheenColor.setHex(brasil ? 0x719aff : 0xfff6e0);
+    bar.material = brasil ? whiteBar : materials.brass;
+    pin.material = backPin.material = brasil ? steel : materials.brass;
+    for (const child of root.children) {
+      if (child instanceof THREE.Mesh && child.userData.pipValue !== undefined) {
+        child.material = brasil ? brasilPips[child.userData.pipValue]! : materials.pip;
+        child.position.y = TILE_H / 2 - (brasil ? 0.01 : 0.006);
+      }
+    }
+  };
+  return { tile, root, body, bodyMaterial, setTheme, dispose: () => bodyMaterial.dispose() };
 }
