@@ -3,7 +3,9 @@
 
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { TILE_L, TILE_W } from '../game/layout';
+import type { ThemeId } from '../theme';
 import type { Tile } from '../game/rules';
 
 export const TILE_H = 0.42;
@@ -94,6 +96,8 @@ const PIP_LAYOUT: Record<number, [number, number][]> = {
 };
 
 export interface TileView {
+  setTheme(theme: ThemeId): void;
+  dispose(): void;
   tile: Tile;
   /** Nó externo: posição e giro na mesa. */
   root: THREE.Group;
@@ -102,24 +106,78 @@ export interface TileView {
   bodyMaterial: THREE.MeshPhysicalMaterial;
 }
 
+export const BRASIL_PIP_COLORS = [0, 0xffffff, 0xf04b24, 0x101014, 0x168342, 0xffd526, 0xf04b24] as const;
+const brasilPips = BRASIL_PIP_COLORS.map(color => new THREE.MeshPhysicalMaterial({ color, roughness: 0.3, clearcoat: 0.7 }));
+const whiteBar = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+const steel = new THREE.MeshStandardMaterial({ color: 0xc4c9d0, metalness: 1, roughness: 0.23 });
+
+/** Replace only the flat top with a perforated plate and real socket walls. */
+function recessedBody(tile: Tile): THREE.BufferGeometry {
+  const positions = bodyGeo.getAttribute('position');
+  const keep: number[] = [];
+  for (let i = 0; i < positions.count; i += 3) {
+    if (![0, 1, 2].every(j => Math.abs(positions.getY(i + j) - TILE_H / 2) < 1e-6)) {
+      keep.push(i, i + 1, i + 2);
+    }
+  }
+  const shell = bodyGeo.clone();
+  shell.setIndex(keep);
+  const shellTriangles = shell.toNonIndexed();
+  shell.dispose();
+  const face = new THREE.Shape();
+  const x = TILE_L / 2 - 0.11;
+  const z = TILE_W / 2 - 0.11;
+  face.moveTo(-x, -z);
+  face.lineTo(x, -z);
+  face.lineTo(x, z);
+  face.lineTo(-x, z);
+  face.closePath();
+  for (const [value, cx] of [[tile.a, -TILE_W / 2], [tile.b, TILE_W / 2]]) {
+    for (const [px, pz] of PIP_LAYOUT[value]!) {
+      const hole = new THREE.Path();
+      hole.absarc(cx + px, -pz, 0.086, 0, Math.PI * 2, true);
+      face.holes.push(hole);
+    }
+  }
+  const plate = new THREE.ExtrudeGeometry(face, {
+    depth: 0.024, bevelEnabled: false, steps: 1, curveSegments: 28,
+  });
+  plate.rotateX(-Math.PI / 2);
+  plate.translate(0, TILE_H / 2 - 0.024, 0);
+  // Internal resin beneath the painted floors also belongs to the selectable
+  // body: main raycasts this mesh alone, without visiting the pip meshes.
+  const interior = new THREE.PlaneGeometry(x * 2, z * 2);
+  interior.rotateX(-Math.PI / 2);
+  interior.translate(0, TILE_H / 2 - 0.04, 0);
+  const interiorTriangles = interior.toNonIndexed();
+  const result = mergeGeometries([shellTriangles, plate, interiorTriangles]);
+  shellTriangles.dispose();
+  plate.dispose();
+  interior.dispose();
+  interiorTriangles.dispose();
+  return result;
+}
+
 function addPips(group: THREE.Group, value: number, cx: number): void {
   for (const [px, pz] of PIP_LAYOUT[value]!) {
     const pip = new THREE.Mesh(pipGeo, materials.pip);
     // Disco preto embutido na face, rente à superfície: ponto pintado e envernizado.
     pip.position.set(cx + px, TILE_H / 2 - 0.006, pz);
+    pip.userData.pipValue = value;
     pip.castShadow = false;
     group.add(pip);
   }
 }
 
 export function createTileView(tile: Tile): TileView {
+  let brasilBody: THREE.BufferGeometry | undefined;
   const root = new THREE.Group();
   root.rotation.order = 'YXZ'; // primeiro vira (X), depois gira na mesa (Y)
   root.name = `tile-${tile.a}-${tile.b}`;
 
   // Cada peça tem seu próprio material do corpo, para poder brilhar quando jogável.
   const bodyMaterial = materials.body.clone();
-  const body = new THREE.Mesh(bodyGeo, bodyMaterial);
+  const body = new THREE.Mesh<THREE.BufferGeometry, THREE.MeshPhysicalMaterial>(bodyGeo, bodyMaterial);
   body.castShadow = true;
   body.receiveShadow = true;
   body.userData.tileId = tile.id;
@@ -141,5 +199,24 @@ export function createTileView(tile: Tile): TileView {
   backPin.position.y = -TILE_H / 2 - 0.008;
   root.add(backPin);
 
-  return { tile, root, body, bodyMaterial };
+  const setTheme = (theme: ThemeId) => {
+    const brasil = theme === 'brasil';
+    if (brasil) brasilBody ??= recessedBody(tile);
+    body.geometry = brasil ? brasilBody! : bodyGeo;
+    bodyMaterial.color.setHex(brasil ? 0x164bcc : 0xf3ecdc);
+    bodyMaterial.sheenColor.setHex(brasil ? 0x719aff : 0xfff6e0);
+    bar.material = brasil ? whiteBar : materials.brass;
+    pin.material = backPin.material = brasil ? steel : materials.brass;
+    for (const child of root.children) {
+      if (child instanceof THREE.Mesh && child.userData.pipValue !== undefined) {
+        child.material = brasil ? brasilPips[child.userData.pipValue]! : materials.pip;
+        // Colored floor is 0.018 below the face, inside the open socket.
+        child.position.y = TILE_H / 2 - (brasil ? 0.028 : 0.006);
+      }
+    }
+  };
+  return { tile, root, body, bodyMaterial, setTheme, dispose: () => {
+    bodyMaterial.dispose();
+    brasilBody?.dispose();
+  } };
 }

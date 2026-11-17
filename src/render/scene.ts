@@ -3,6 +3,8 @@
 // e reflexos de ambiente via PMREM.
 
 import * as THREE from 'three';
+import type { ThemeId } from '../theme';
+import { buildBrasilStage } from './brasilStage';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
@@ -10,6 +12,8 @@ export const TABLE_W = 30;
 export const TABLE_D = 22;
 
 export interface Stage {
+  setTheme(theme: ThemeId): void;
+  dispose(): void;
   renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
@@ -176,11 +180,34 @@ export function createStage(container: HTMLElement): Stage {
   scene.fog = new THREE.Fog(0x07080a, 38, 70);
 
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  const room = new RoomEnvironment();
+  const environmentTarget = pmrem.fromScene(room, 0.04);
+  scene.environment = environmentTarget.texture;
+  room.dispose();
+  pmrem.dispose();
   scene.environmentIntensity = 0.3;
 
-  buildTable(scene);
-  buildLights(scene);
+  const defaultStage = new THREE.Scene();
+  buildTable(defaultStage);
+  buildLights(defaultStage);
+  const defaultGroup = new THREE.Group();
+  defaultGroup.add(...defaultStage.children.slice());
+  scene.add(defaultGroup);
+  let brasilGroup: THREE.Group | undefined;
+  const defaultBackground = scene.background;
+  const defaultFog = scene.fog;
+  const setTheme = (theme: ThemeId) => {
+    const brasil = theme === 'brasil';
+    if (brasil && !brasilGroup) {
+      brasilGroup = buildBrasilStage(TABLE_W, TABLE_D);
+      scene.add(brasilGroup);
+    }
+    defaultGroup.visible = !brasil;
+    if (brasilGroup) brasilGroup.visible = brasil;
+    scene.background = brasil ? new THREE.Color(0xc9dbe8) : defaultBackground;
+    scene.fog = brasil ? new THREE.Fog(0xc9dbe8, 65, 115) : defaultFog;
+    scene.environmentIntensity = brasil ? 0.55 : 0.3;
+  };
 
   const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 120);
   camera.position.set(0, 20, 18.5);
@@ -208,5 +235,28 @@ export function createStage(container: HTMLElement): Stage {
   resize();
   window.addEventListener('resize', resize);
 
-  return { renderer, scene, camera, controls, resize };
+  const dispose = () => {
+    window.removeEventListener('resize', resize);
+    controls.dispose();
+    const geometries = new Set<THREE.BufferGeometry>();
+    const materials = new Set<THREE.Material>();
+    const textures = new Set<THREE.Texture>();
+    for (const group of [defaultGroup, brasilGroup]) group?.traverse(object => {
+      if (object instanceof THREE.Mesh) {
+        geometries.add(object.geometry);
+        for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+          materials.add(material);
+          for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
+        }
+      }
+      if (object instanceof THREE.Light && 'dispose' in object) object.dispose();
+    });
+    geometries.forEach(value => value.dispose());
+    materials.forEach(value => value.dispose());
+    textures.forEach(value => value.dispose());
+    environmentTarget.dispose();
+    renderer.dispose();
+    renderer.domElement.remove();
+  };
+  return { renderer, scene, camera, controls, resize, setTheme, dispose };
 }
