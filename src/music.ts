@@ -1,4 +1,5 @@
 // Reprodução local; inicia somente após interação e respeita a preferência do jogador.
+import type { ThemeId } from './theme';
 const toggle = document.getElementById('music-toggle') as HTMLButtonElement;
 const status = document.getElementById('music-status')!;
 const audio = new Audio(`${import.meta.env.BASE_URL}audio/backbay-lounge.mp3`);
@@ -9,7 +10,9 @@ audio.loop = true;
 audio.preload = 'none';
 let enabled = true;
 let interacted = false;
-let pending = false;
+let pending: number | undefined;
+let playbackRevision = 0;
+let musicTheme: ThemeId = 'default';
 let effectContext: AudioContext | undefined;
 let tileSound: AudioBuffer | undefined;
 let tileSoundLoading: Promise<void> | undefined;
@@ -78,15 +81,30 @@ function update() {
   toggle.setAttribute('aria-pressed', String(enabled));
 }
 async function start() {
-  if (!enabled || !interacted || document.hidden || pending || !audio.paused) return;
-  pending = true;
+  if (!enabled || !interacted || document.hidden || pending === playbackRevision || !audio.paused) return;
+  const revision = playbackRevision;
+  pending = revision;
   try {
     await audio.play();
+    if (revision !== playbackRevision) return;
     status.textContent = '';
     if (!enabled || document.hidden) audio.pause();
   } catch {
-    status.textContent = 'Toque em Música para tentar reproduzir.';
-  } finally { pending = false; }
+    if (revision === playbackRevision) status.textContent = 'Toque em Música para tentar reproduzir.';
+  } finally { if (pending === revision) pending = undefined; }
+}
+
+/** Swap the single music player so themes never overlap. Effects stay shared. */
+export function setMusicTheme(theme: ThemeId) {
+  if (theme === musicTheme) return;
+  musicTheme = theme;
+  ++playbackRevision;
+  pending = undefined;
+  audio.pause();
+  audio.src = `${import.meta.env.BASE_URL}audio/${theme === 'brasil' ? 'pedras-na-mesa-brasil.mp3' : 'backbay-lounge.mp3'}`;
+  audio.load();
+  status.textContent = '';
+  void start();
 }
 toggle.addEventListener('click', () => {
   interacted = true;

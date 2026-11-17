@@ -1,5 +1,5 @@
 import { setupThemeMenu } from './uiTheme';
-import { playGatheringSound, playTileSound, stopGatheringSound } from './music';
+import { playGatheringSound, playTileSound, setMusicTheme, stopGatheringSound } from './music';
 // Controlador do jogo: liga regras, IA, cena 3D e interface.
 
 import * as THREE from 'three';
@@ -43,6 +43,10 @@ const ui = {
 };
 ui.target.textContent = String(MATCH_TARGET);
 const themeMenu = setupThemeMenu(ui.menuForm);
+setMusicTheme(themeMenu.current());
+ui.menuForm.addEventListener('change', (event) => {
+  if ((event.target as HTMLInputElement).name === 'theme') setMusicTheme(themeMenu.current());
+});
 
 // ---------- Cena ----------
 const stage = createStage($('stage'));
