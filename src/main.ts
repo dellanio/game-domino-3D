@@ -1,3 +1,5 @@
+import { setupThemeMenu } from './uiTheme';
+import type { ThemeId } from './theme';
 import { playGatheringSound, playTileSound, stopGatheringSound } from './music';
 // Controlador do jogo: liga regras, IA, cena 3D e interface.
 
@@ -41,6 +43,7 @@ const ui = {
   modalBtn: $<HTMLButtonElement>('modal-btn'),
 };
 ui.target.textContent = String(MATCH_TARGET);
+const themeMenu = setupThemeMenu(ui.menuForm);
 
 // ---------- Cena ----------
 const stage = createStage($('stage'));
@@ -506,6 +509,11 @@ ui.menuForm.addEventListener('submit', (event) => {
   event.preventDefault();
   const value = Number(new FormData(ui.menuForm).get('mode'));
   if (value !== 3 && value !== 5 && value !== 7) return;
+  const theme = themeMenu.current();
+  (stage as typeof stage & { setTheme(theme: ThemeId): void }).setTheme(theme);
+  for (const v of views.values()) {
+    (v as typeof v & { setTheme(theme: ThemeId): void }).setTheme(theme);
+  }
   handSize = value;
   ++session;
   inMenu = false;
