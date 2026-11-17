@@ -144,9 +144,17 @@ function recessedBody(tile: Tile): THREE.BufferGeometry {
   });
   plate.rotateX(-Math.PI / 2);
   plate.translate(0, TILE_H / 2 - 0.024, 0);
-  const result = mergeGeometries([shellTriangles, plate]);
+  // Internal resin beneath the painted floors also belongs to the selectable
+  // body: main raycasts this mesh alone, without visiting the pip meshes.
+  const interior = new THREE.PlaneGeometry(x * 2, z * 2);
+  interior.rotateX(-Math.PI / 2);
+  interior.translate(0, TILE_H / 2 - 0.04, 0);
+  const interiorTriangles = interior.toNonIndexed();
+  const result = mergeGeometries([shellTriangles, plate, interiorTriangles]);
   shellTriangles.dispose();
   plate.dispose();
+  interior.dispose();
+  interiorTriangles.dispose();
   return result;
 }
 

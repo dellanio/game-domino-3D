@@ -4,6 +4,28 @@ import { createTileView, materials, BRASIL_PIP_COLORS } from '../src/render/tile
 import { buildBrasilStage } from '../src/render/brasilStage';
 
 describe('Brasil rendering', () => {
+  it('selects the body at every pip center across repeated theme changes', () => {
+    for (let value = 1; value <= 6; value++) {
+      const view = createTileView({ id: value, a: value, b: value });
+      view.root.position.set(3, 0.5, -2);
+      view.root.rotation.y = 0.7;
+      for (const theme of ['brasil', 'default', 'brasil', 'default'] as const) {
+        view.setTheme(theme);
+        view.root.updateMatrixWorld(true);
+        for (const pip of view.root.children.filter(child => child.userData.pipValue !== undefined)) {
+          const target = pip.getWorldPosition(new THREE.Vector3());
+          const ray = new THREE.Raycaster(target.clone().add(new THREE.Vector3(0, 2, 0)), new THREE.Vector3(0, -1, 0));
+          const hits = ray.intersectObjects([view.body], false);
+          expect(hits.length).toBeGreaterThan(0);
+          expect(hits[0].object).toBe(view.body);
+          expect(hits[0].object.userData.tileId).toBe(value);
+          // The internal body stays below the visible paint in Brasil.
+          if (theme === 'brasil') expect(hits[0].point.y).toBeLessThan(target.y);
+        }
+      }
+      view.dispose();
+    }
+  });
   it('exposes recessed colored floors through real holes from multiple viewing angles', () => {
     for (let value = 1; value <= 6; value++) {
       const view = createTileView({ id: value, a: value, b: value });
