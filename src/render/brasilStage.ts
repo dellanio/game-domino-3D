@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { brasilPavement } from './brasilPavement';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 /** Seamless, deterministic cement mottling with fine aggregate and small pores. */
@@ -41,36 +42,6 @@ export function concreteTexture(): THREE.DataTexture {
   return texture;
 }
 
-/** Four-by-four worn sidewalk slabs, with narrow recessed mortar joints. */
-function pavingTexture(grain: THREE.DataTexture): THREE.DataTexture {
-  const size = grain.image.width;
-  const source = grain.image.data as Uint8Array;
-  const data = new Uint8Array(source.length);
-  const cell = size / 4;
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    const i = (y * size + x) * 4;
-    const dx = Math.min(x % cell, cell - x % cell);
-    const dy = Math.min(y % cell, cell - y % cell);
-    const edge = Math.min(dx, dy);
-    const slab = (Math.floor(x / cell) * 13 + Math.floor(y / cell) * 7) % 11 - 5;
-    const joint = edge < 1.3 ? -43 : edge < 2.6 ? -16 : 0;
-    const fleck = ((x * 73 + y * 151) % 997 < 7) ? 23 : 0;
-    const v = source[i]! + slab + joint + fleck;
-    data.set([v + 3, v + 1, v - 3, 255], i);
-  }
-  const texture = new THREE.DataTexture(data, size, size);
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearMipmapLinearFilter;
-  texture.generateMipmaps = true;
-  texture.anisotropy = 8;
-  // One slab is approximately four world units across.
-  texture.repeat.set(12.5, 12.5);
-  texture.needsUpdate = true;
-  return texture;
-}
-
 export function buildBrasilStage(width: number, depth: number): THREE.Group {
   const group = new THREE.Group();
   group.name = 'brasil-stage';
@@ -98,18 +69,19 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
   for (const x of [-width * 0.32, width * 0.32]) {
     mesh(new RoundedBoxGeometry(1.4, 2.4, depth * 0.65, 3, 0.12), concrete, x, -2.2, 0);
   }
-  const pavingGrain = pavingTexture(grain);
-  const paving = new THREE.MeshStandardMaterial({ color: 0xaaa6a0, map: pavingGrain, roughness: 1, bumpMap: pavingGrain, bumpScale: 0.12 });
+  const pavingTextures = brasilPavement();
+  const paving = new THREE.MeshStandardMaterial({ color: 0xffffff, ...pavingTextures, roughness: 1, bumpScale: 0.045 });
   const floor = mesh(new THREE.PlaneGeometry(200, 200), paving, 0, -3.45, 0);
   floor.rotation.x = -Math.PI / 2;
-  const sun = new THREE.DirectionalLight(0xfffaf3, 3.1);
-  sun.position.set(-12, 26, 14);
+  const sun = new THREE.DirectionalLight(0xffd3a0, 2.5);
+  sun.position.set(-32, 15, 24);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 70 });
+  Object.assign(sun.shadow.camera, { left: -42, right: 42, top: 38, bottom: -38, near: 1, far: 110 });
+  sun.shadow.camera.updateProjectionMatrix();
   sun.shadow.normalBias = 0.025;
   sun.shadow.bias = -0.00015;
-  sun.shadow.radius = 2;
-  group.add(sun, sun.target, new THREE.HemisphereLight(0xcde7ff, 0xa59a82, 0.65));
+  sun.shadow.radius = 4;
+  group.add(sun, sun.target, new THREE.HemisphereLight(0xf5f7ff, 0xaaa49a, 1.15));
   return group;
 }
