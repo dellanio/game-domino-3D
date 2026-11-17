@@ -21,12 +21,12 @@ try {
 } catch { /* O jogo também funciona sem armazenamento local. */ }
 audio.volume = musicVolume;
 
-// Trecho de um segundo do áudio fornecido pelo usuário, carregado antes das jogadas.
+// Impacto curto fornecido pelo usuário, carregado antes das jogadas.
 function loadTileSound(ctx: AudioContext) {
   if (tileSound || tileSoundLoading) return;
   tileSoundLoading = (async () => {
     try {
-      const response = await fetch(`${import.meta.env.BASE_URL}audio/pedra-na-mesa-1s.wav`);
+      const response = await fetch(`${import.meta.env.BASE_URL}audio/pedra-na-mesa-curto.mp3`);
       if (!response.ok) throw new Error('Áudio da pedra indisponível');
       tileSound = await ctx.decodeAudioData(await response.arrayBuffer());
     } catch {
@@ -56,7 +56,7 @@ export function playTileSound() {
   impact.gain.value = 0.3;
   source.connect(impact).connect(ctx.destination);
   source.onended = () => { source.disconnect(); impact.disconnect(); };
-  source.start(now, 0, Math.min(1, tileSound.duration));
+  source.start(now);
 }
 
 export function stopGatheringSound() {
