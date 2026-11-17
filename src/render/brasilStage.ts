@@ -41,6 +41,36 @@ export function concreteTexture(): THREE.DataTexture {
   return texture;
 }
 
+/** Four-by-four worn sidewalk slabs, with narrow recessed mortar joints. */
+function pavingTexture(grain: THREE.DataTexture): THREE.DataTexture {
+  const size = grain.image.width;
+  const source = grain.image.data as Uint8Array;
+  const data = new Uint8Array(source.length);
+  const cell = size / 4;
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const i = (y * size + x) * 4;
+    const dx = Math.min(x % cell, cell - x % cell);
+    const dy = Math.min(y % cell, cell - y % cell);
+    const edge = Math.min(dx, dy);
+    const slab = (Math.floor(x / cell) * 13 + Math.floor(y / cell) * 7) % 11 - 5;
+    const joint = edge < 1.3 ? -43 : edge < 2.6 ? -16 : 0;
+    const fleck = ((x * 73 + y * 151) % 997 < 7) ? 23 : 0;
+    const v = source[i]! + slab + joint + fleck;
+    data.set([v + 3, v + 1, v - 3, 255], i);
+  }
+  const texture = new THREE.DataTexture(data, size, size);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  texture.anisotropy = 8;
+  // One slab is approximately four world units across.
+  texture.repeat.set(12.5, 12.5);
+  texture.needsUpdate = true;
+  return texture;
+}
+
 export function buildBrasilStage(width: number, depth: number): THREE.Group {
   const group = new THREE.Group();
   group.name = 'brasil-stage';
@@ -55,22 +85,21 @@ export function buildBrasilStage(width: number, depth: number): THREE.Group {
     return result;
   };
   // The recessed playing surface remains exactly at y=0. Rounded lip stays outside it.
-  mesh(new RoundedBoxGeometry(width + 1.4, 1.05, depth + 1.4, 5, 0.22), concrete, 0, -0.59, 0);
+  mesh(new RoundedBoxGeometry(width + 3, 1.35, depth + 3, 5, 0.22), concrete, 0, -0.78, 0);
   const surface = mesh(new THREE.PlaneGeometry(width, depth), concrete, 0, 0, 0);
   surface.rotation.x = -Math.PI / 2;
   const lipMaterial = concrete.clone();
   lipMaterial.color.setHex(0xa3a6aa);
   for (const [x, z, w, d] of [
-    [0, -depth / 2 - 0.22, width + 0.9, 0.44], [0, depth / 2 + 0.22, width + 0.9, 0.44],
-    [-width / 2 - 0.22, 0, 0.44, depth], [width / 2 + 0.22, 0, 0.44, depth],
-  ]) mesh(new RoundedBoxGeometry(w!, 0.18, d!, 3, 0.075), lipMaterial, x!, -0.035, z!);
+    [0, -depth / 2 - 0.625, width + 2.5, 1.25], [0, depth / 2 + 0.625, width + 2.5, 1.25],
+    [-width / 2 - 0.625, 0, 1.25, depth], [width / 2 + 0.625, 0, 1.25, depth],
+  ]) mesh(new RoundedBoxGeometry(w!, 0.55, d!, 5, 0.13), lipMaterial, x!, 0.125, z!);
   // Substantial concrete supports and a pale paved public square below the tabletop.
   for (const x of [-width * 0.32, width * 0.32]) {
     mesh(new RoundedBoxGeometry(1.4, 2.4, depth * 0.65, 3, 0.12), concrete, x, -2.2, 0);
   }
-  const pavingGrain = grain.clone();
-  pavingGrain.repeat.set(40, 40);
-  const paving = new THREE.MeshStandardMaterial({ color: 0xa5a6a8, map: pavingGrain, roughness: 1, bumpMap: pavingGrain, bumpScale: 0.06 });
+  const pavingGrain = pavingTexture(grain);
+  const paving = new THREE.MeshStandardMaterial({ color: 0xaaa6a0, map: pavingGrain, roughness: 1, bumpMap: pavingGrain, bumpScale: 0.12 });
   const floor = mesh(new THREE.PlaneGeometry(200, 200), paving, 0, -3.45, 0);
   floor.rotation.x = -Math.PI / 2;
   const sun = new THREE.DirectionalLight(0xfffaf3, 3.1);

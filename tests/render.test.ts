@@ -91,6 +91,10 @@ describe('Brasil rendering', () => {
     expect(surface.material.map).toBe(surface.material.bumpMap);
     expect(surface.material.roughness).toBe(0.98);
     expect(surface.material.map).toBeInstanceOf(THREE.DataTexture);
+    const floor = group.children.find(child => child instanceof THREE.Mesh && child.position.y === -3.45) as THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
+    // Sidewalk joints must never leak onto the seamless tabletop texture.
+    expect(floor.material.map!.source).not.toBe(surface.material.map!.source);
+    expect(surface.material.map!.repeat.toArray()).toEqual([2, 2]);
     expect(group.children.some(child => child instanceof THREE.DirectionalLight && child.castShadow)).toBe(true);
   });
 });
